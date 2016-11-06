@@ -152,3 +152,7 @@ func (a *agent) SetUserData(data interface{}) {
 func (a *agent) Verify() {
 	a.conn.Verify()
 }
+
+func (a *agent) GetClientIP() string {
+	return a.conn.RemoteAddr().String()
+}

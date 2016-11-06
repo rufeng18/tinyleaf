@@ -7,4 +7,5 @@ type Agent interface {
 	UserData() interface{}
 	SetUserData(data interface{})
 	Verify()
+	GetClientIP() string
 }

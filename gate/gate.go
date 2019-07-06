@@ -21,10 +21,11 @@ type Gate struct {
 	HTTPTimeout time.Duration
 
 	// tcp
-	TCPAddr      string
-	LenMsgLen    int
-	LittleEndian bool
-	Encrypt      bool
+	TCPAddr       string
+	LenMsgLen     int
+	LenExtHeadLen int
+	LittleEndian  bool
+	Encrypt       bool
 }
 
 func (gate *Gate) Run(closeSig chan bool) {
@@ -52,6 +53,7 @@ func (gate *Gate) Run(closeSig chan bool) {
 		tcpServer.MaxConnNum = gate.MaxConnNum
 		tcpServer.PendingWriteNum = gate.PendingWriteNum
 		tcpServer.LenMsgLen = gate.LenMsgLen
+		tcpServer.LenExtHeadLen = gate.LenExtHeadLen
 		tcpServer.MaxMsgLen = gate.MaxMsgLen
 		tcpServer.LittleEndian = gate.LittleEndian
 		tcpServer.Encrypt = gate.Encrypt

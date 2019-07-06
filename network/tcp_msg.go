@@ -3,6 +3,7 @@ package network
 import (
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 
@@ -11,20 +12,22 @@ import (
 
 var ENCRYPT_KEY = "0123456789"
 
-// --------------
-// | len | data |
-// --------------
+// ------------------
+// | len |head| data |
+// ------------------
 type MsgParser struct {
-	lenMsgLen    int
-	minMsgLen    uint32
-	maxMsgLen    uint32
-	littleEndian bool
-	encrypt      bool // 加密标示
+	lenMsgLen     int
+	lenExtHeadLen int // 协议头长度
+	minMsgLen     uint32
+	maxMsgLen     uint32
+	littleEndian  bool
+	encrypt       bool // 加密标示
 }
 
 func NewMsgParser() *MsgParser {
 	p := new(MsgParser)
 	p.lenMsgLen = 2
+	p.lenExtHeadLen = 2
 	p.minMsgLen = 1
 	p.maxMsgLen = 4096
 	p.littleEndian = false
@@ -63,6 +66,11 @@ func (p *MsgParser) SetMsgLen(lenMsgLen int, minMsgLen uint32, maxMsgLen uint32)
 }
 
 // It's dangerous to call the method on reading or writing
+func (p *MsgParser) SetExtHeadLen(l int) {
+	p.lenExtHeadLen = l
+}
+
+// It's dangerous to call the method on reading or writing
 func (p *MsgParser) SetByteOrder(littleEndian bool) {
 	p.littleEndian = littleEndian
 }
@@ -74,8 +82,7 @@ func (p *MsgParser) SetEncrypt(encrypt bool) {
 // goroutine safe
 func (p *MsgParser) Read(conn *TCPConn) ([]byte, error) {
 	var b [4]byte
-	bufMsgLen := b[:p.lenMsgLen]
-
+	bufMsgLen := b[:p.lenMsgLen] // 读取头数据
 	// read len
 	if _, err := io.ReadFull(conn, bufMsgLen); err != nil {
 		return nil, err
@@ -107,23 +114,29 @@ func (p *MsgParser) Read(conn *TCPConn) ([]byte, error) {
 		return nil, errors.New("message too short")
 	}
 
+	fmt.Println("tcp_msg.go.MsgParse.Read rawDate Len:", msgLen)
+
 	// data
 	msgData := make([]byte, msgLen)
 	if _, err := io.ReadFull(conn, msgData); err != nil {
 		return nil, err
 	}
 
+	fmt.Println("tcp_msg.go.MsgParse.Read msgData:", msgData)
+	bodyData := msgData[p.lenExtHeadLen:] // 跳过消息头
+	fmt.Println("tcp_msg.go.MsgParse.Read bodyData:", string(bodyData))
 	// decrypt data
 	if p.encrypt {
-		decrypt_data := xxtea.Decrypt(msgData, []byte(ENCRYPT_KEY))
+		decrypt_data := xxtea.Decrypt(bodyData, []byte(ENCRYPT_KEY))
 		return decrypt_data, nil
 	} else {
-		return msgData, nil
+		return bodyData, nil
 	}
 }
 
 // goroutine safe
 func (p *MsgParser) Write(conn *TCPConn, args ...[]byte) error {
+	fmt.Println("tcp_msg.go.MsgParse.Write", conn, args)
 	// get len
 	var msgLen uint32
 	for i := 0; i < len(args); i++ {
@@ -137,6 +150,7 @@ func (p *MsgParser) Write(conn *TCPConn, args ...[]byte) error {
 		return errors.New("message too short")
 	}
 
+	msgLen = msgLen + uint32(p.lenExtHeadLen)
 	msg := make([]byte, uint32(p.lenMsgLen)+msgLen)
 
 	// write len
@@ -157,13 +171,16 @@ func (p *MsgParser) Write(conn *TCPConn, args ...[]byte) error {
 		}
 	}
 
+	// write head data (忽略)
+
 	// write data
-	l := p.lenMsgLen
+	l := p.lenMsgLen + p.lenExtHeadLen
 	for i := 0; i < len(args); i++ {
 		copy(msg[l:], args[i])
 		l += len(args[i])
 	}
 
+	fmt.Println("tcp_msg.go.MsgParse.Write Data Len:", l)
 	conn.Write(msg)
 
 	return nil
@@ -171,7 +188,7 @@ func (p *MsgParser) Write(conn *TCPConn, args ...[]byte) error {
 
 // goroutine safe
 func (p *MsgParser) Write1(conn *TCPConn, args ...[]byte) error {
-	//fmt.Println("tcp_msg.go.MsgParse.Write", conn, args)
+	fmt.Println("tcp_msg.go.MsgParse.Write1", conn, args)
 	l := 0
 	var dataLen uint32
 	for i := 0; i < len(args); i++ {

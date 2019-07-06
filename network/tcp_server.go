@@ -20,12 +20,13 @@ type TCPServer struct {
 	wgConns         sync.WaitGroup
 
 	// msg parser
-	LenMsgLen    int
-	MinMsgLen    uint32
-	MaxMsgLen    uint32
-	LittleEndian bool
-	Encrypt      bool
-	msgParser    *MsgParser
+	LenMsgLen     int
+	MinMsgLen     uint32
+	MaxMsgLen     uint32
+	LittleEndian  bool
+	Encrypt       bool
+	LenExtHeadLen int
+	msgParser     *MsgParser
 }
 
 func (server *TCPServer) Start() {
@@ -59,6 +60,7 @@ func (server *TCPServer) init() {
 	msgParser.SetMsgLen(server.LenMsgLen, server.MinMsgLen, server.MaxMsgLen)
 	msgParser.SetByteOrder(server.LittleEndian)
 	msgParser.SetEncrypt(server.Encrypt)
+	msgParser.SetExtHeadLen(server.LenExtHeadLen)
 	server.msgParser = msgParser
 }
 

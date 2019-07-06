@@ -4,7 +4,7 @@ import "time"
 
 var (
 	LenStackBuf    = 4096
-	VerifyInterval = 30 * time.Second
+	VerifyInterval = 300 * time.Second
 
 	// log
 	LogLevel string

@@ -62,13 +62,18 @@ func New(strLevel string, pathname string) (*Logger, error) {
 	if pathname != "" {
 		now := time.Now()
 
-		filename := fmt.Sprintf("%d%02d%02d_%02d_%02d_%02d.log",
+		//		filename := fmt.Sprintf("%d%02d%02d_%02d_%02d_%02d.log",
+		//			now.Year(),
+		//			now.Month(),
+		//			now.Day(),
+		//			now.Hour(),
+		//			now.Minute(),
+		//			now.Second())
+		filename := fmt.Sprintf("%d%02d%02d_%02d.log",
 			now.Year(),
 			now.Month(),
 			now.Day(),
-			now.Hour(),
-			now.Minute(),
-			now.Second())
+			now.Hour())
 
 		//file, err := os.OpenFile(path.Join(pathname, filename), os.O_RDWR|os.O_CREATE|os.O_EXCL, 0666)
 		file, err := os.Create(path.Join(pathname, filename))

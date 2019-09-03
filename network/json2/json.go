@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/json-iterator/go/extra"
 	"reflect"
 
 	"github.com/rufeng18/tinyleaf/chanrpc"
@@ -27,6 +28,8 @@ func NewProcessor() *Processor {
 	p := new(Processor)
 	p.msgInfo = make(map[string]*MsgInfo)
 	p.msgIdTypes = make(map[reflect.Type]string)
+
+	extra.RegisterFuzzyDecoders()
 	return p
 }
 
@@ -111,6 +114,7 @@ func (p *Processor) Route(msg interface{}, userData interface{}) error {
 
 // goroutine safe
 func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
+	//log.Info("unmash: %s", string(data));
 	msgID := jsoniter.Get(data, "cmd").ToString()
 	i, ok := p.msgInfo[msgID]
 	if !ok {

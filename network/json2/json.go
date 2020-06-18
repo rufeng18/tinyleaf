@@ -115,7 +115,7 @@ func (p *Processor) Route(msg interface{}, userData interface{}) error {
 // goroutine safe
 func (p *Processor) Unmarshal(data []byte) (interface{}, error) {
 	//log.Info("unmash: %s", string(data));
-	msgID := jsoniter.Get(data, "cmd").ToString()
+	msgID := jsoniter.Get(data, "c").ToString()
 	i, ok := p.msgInfo[msgID]
 	if !ok {
 		return nil, fmt.Errorf("message %v not registered", msgID)
